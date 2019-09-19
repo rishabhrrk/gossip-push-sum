@@ -1,1 +1,0 @@
-GossipSimulator.CLI.main()
