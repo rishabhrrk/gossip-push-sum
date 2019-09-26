@@ -29,24 +29,49 @@ defmodule GossipSimulator.CLI do
     end
 
     # Start all nodes
-    GossipSimulator.Supervisor.start_link({num_nodes, topology})
+    GossipSimulator.Supervisor.start_link(num_nodes)
 
     # Get all nodes started by the supervisor
-    nodes = Supervisor.which_children(GossipSimulator.Supervisor)
-    node_pids = Enum.map(nodes, fn {_, pid, :worker, [GossipSimulator.Node]} -> pid end)
+    node_pids = 
+      Supervisor.which_children(GossipSimulator.Supervisor)
+      |> Enum.map(fn {_, pid, :worker, [GossipSimulator.Node]} -> pid end)
+
+    # Create the network topology
+    network = GossipSimulator.TopologyBuilder.build(node_pids, topology)
+
+    # Set the neighbours of every node
+    Enum.each(network, fn {node, neighbours} ->
+      GenServer.call(node, {:set_neighbours, neighbours})  # can also call :add_neighbours
+    end)
 
     case algorithm do
       "gossip" ->
         
-        starter_node = Enum.random(nodes)
-        {starter_node_id, starter_node_pid, _, _} = starter_node
-        IO.puts "Starting node: Node #{starter_node_id} (#{inspect starter_node_pid})"
+        # Pick a random node to start the gossip
+        starter_node_pid = Enum.random(node_pids)
+        IO.puts "Choosing random node #{inspect starter_node_pid} to send the first message"
 
+        start_time = System.system_time(:millisecond)
         GossipSimulator.Algorithms.Gossip.run(starter_node_pid)
         
-        IO.inspect GenServer.call(starter_node_pid, :get_state)
+        wait_until_converged(node_pids)
+        end_time = System.system_time(:millisecond)
+        IO.puts "Stopping condition reached. Total time: #{end_time - start_time}ms"
       
       "push-sum" -> GossipSimulator.Algorithms.PushSum.run(node_pids)
+    end
+  end
+
+  def wait_until_converged(node_pids) do
+    counters = Enum.map(node_pids, fn pid ->
+      state = GenServer.call(pid, :get_state)
+      state[:counter]
+    end)
+
+    unless Enum.all?(counters, fn c -> c == 10 end) do
+      wait_until_converged(node_pids)
+    else
+      :done
     end
   end
 
