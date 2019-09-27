@@ -15,7 +15,7 @@ defmodule GossipSimulator.CLI do
     num_nodes = args |> Enum.at(0) |> String.to_integer
 
     topology = Enum.at(args, 1)
-    
+
     unless Enum.member?(@topologies, topology) do
       print_help_msg()
       exit :shutdown
@@ -32,9 +32,10 @@ defmodule GossipSimulator.CLI do
     GossipSimulator.Supervisor.start_link(num_nodes)
 
     # Get all nodes started by the supervisor
-    node_pids = 
+    node_pids =
       Supervisor.which_children(GossipSimulator.Supervisor)
       |> Enum.map(fn {_, pid, :worker, [GossipSimulator.Node]} -> pid end)
+
 
     # Create the network topology
     network = GossipSimulator.TopologyBuilder.build(node_pids, topology)
@@ -46,30 +47,52 @@ defmodule GossipSimulator.CLI do
 
     case algorithm do
       "gossip" ->
-        
+
         # Pick a random node to start the gossip
         starter_node_pid = Enum.random(node_pids)
         IO.puts "Choosing random node #{inspect starter_node_pid} to send the first message"
 
         start_time = System.system_time(:millisecond)
         GossipSimulator.Algorithms.Gossip.run(starter_node_pid)
-        
-        wait_until_converged(node_pids)
+
+        wait_until_gossipconverged(node_pids)
         end_time = System.system_time(:millisecond)
         IO.puts "Stopping condition reached. Total time: #{end_time - start_time}ms"
-      
-      "push-sum" -> GossipSimulator.Algorithms.PushSum.run(node_pids)
+
+      "push-sum" -> GossipSimulator.Algorithms.PushSum.initialize(node_pids)
+
+        starter_node_pid = Enum.random(node_pids)
+        IO.puts "Choosing random node #{inspect starter_node_pid} to send the first message"
+
+        start_time = System.system_time(:millisecond)
+        GossipSimulator.Algorithms.PushSum.run(starter_node_pid)
+        wait_until_pushsumconverged(node_pids)
+        end_time = System.system_time(:millisecond)
+        IO.puts "Stopping condition reached. Total time: #{end_time - start_time}ms"
     end
   end
 
-  def wait_until_converged(node_pids) do
+  def wait_until_pushsumconverged(node_pids) do
+    counters = Enum.map(node_pids, fn pid ->
+      state = GenServer.call(pid, :get_state)
+      state[:is_pushsum_terminated?]
+    end)
+
+    unless Enum.all?(counters, fn c -> c == false end) do
+      wait_until_pushsumconverged(node_pids)
+    else
+      :done
+    end
+  end
+
+  def wait_until_gossipconverged(node_pids) do
     counters = Enum.map(node_pids, fn pid ->
       state = GenServer.call(pid, :get_state)
       state[:counter]
     end)
 
     unless Enum.all?(counters, fn c -> c == 10 end) do
-      wait_until_converged(node_pids)
+      wait_until_gossipconverged(node_pids)
     else
       :done
     end

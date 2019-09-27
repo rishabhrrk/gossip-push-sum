@@ -22,6 +22,13 @@ defmodule GossipSimulator.Node do
     {:reply, :ok, state}
   end
 
+  @impl true
+  def handle_call({:set_coordinates, x, y}, _from, state) do
+    state = Map.put(state, :x, x)
+    state = Map.put(state, :y, y)
+    {:reply, :ok, state}
+  end
+
   @doc """
   Adds one neighbour to the current state
   """
@@ -63,14 +70,73 @@ defmodule GossipSimulator.Node do
       # Update the counter
       state = Map.put(state, :counter, counter + 1)
 
-      # Send the neighbours the message
+      # Send all the neighbours the message
       Enum.each(state[:neighbours], fn pid ->
         GenServer.cast(pid, {:send_message, message})
       end)
+
+      # Send the message to a random neighbour
+      # The below code doesn't work as the message is not being distributed to neighbours and everytime a neighbour reaches counter 10, it does not send the message any further.
+      # random_neighbour = Enum.random(state[:neighbours])
+      # GenServer.cast(random_neighbour, {:send_message, message})
 
       {:noreply, state}
     else
       {:noreply, state}
     end
+  end
+
+  @impl true
+  def handle_call({:initialize_s, s}, _from, state) do
+    # Update the state HashMap
+    state = Map.put(state, :s, s)
+    {:reply, :ok, state}
+  end
+
+  @impl true
+  def handle_cast({:push_sum, s, w}, state) do
+    s_current = state[:s]
+    w_current = state[:w]
+
+    sw_ratio1 = state[:sw_ratio1]
+    sw_ratio2 = state[:sw_ratio2]
+    sw_ratio3 = state[:sw_ratio3]
+
+    lookup_factor = :math.pow(10,-10)
+
+    if(sw_ratio3 - sw_ratio2 <= lookup_factor
+      && sw_ratio2 - sw_ratio1 <= lookup_factor
+      && sw_ratio3 - sw_ratio1 <= lookup_factor) do
+
+      s_new = (s_current + s) / 2
+      w_new = (w_current + s) / 2
+
+      state = Map.put(state, :s, s_new)
+      state = Map.put(state, :w, w_new)
+
+      sw_ratio = s / w
+      state = Map.put(state, :sw_ratio1, sw_ratio2)
+      state = Map.put(state, :sw_ratio2, sw_ratio3)
+      state = Map.put(state, :sw_ratio3, sw_ratio)
+
+      # Send all the neighbours the message
+      Enum.each(state[:neighbours], fn pid ->
+        GenServer.cast(pid, {:push_sum, s_new, w_new})
+      end)
+
+
+      # Send the message to a random neighbour
+      # The below code doesn't work as the message is not being distributed to
+      # neighbours and everytime a neighbour reaches counter 10, it does not
+      # send the message any further.
+      # random_neighbour = Enum.random(state[:neighbours])
+      # GenServer.cast(random_neighbour, {:push_sum, s_new, w_new})
+
+      {:noreply, state}
+  else
+      state = Map.put(state, :is_pushsum_terminated?, true)
+      {:noreply, state}
+  end
+
   end
 end
