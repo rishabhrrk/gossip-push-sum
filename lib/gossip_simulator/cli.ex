@@ -13,6 +13,8 @@ defmodule GossipSimulator.CLI do
 
     # TODO try/catch/rescue block here to handle invalid arguments
     num_nodes = args |> Enum.at(0) |> String.to_integer
+    # taking approximation for number of nodes to form a perfect square in 2d topologies
+    num_nodes = Kernel.trunc(:math.pow(round(:math.sqrt(num_nodes)),2))
 
     topology = Enum.at(args, 1)
 

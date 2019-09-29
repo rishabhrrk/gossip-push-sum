@@ -105,8 +105,7 @@ defmodule GossipSimulator.Node do
     lookup_factor = :math.pow(10,-10)
 
     if(sw_ratio3 - sw_ratio2 <= lookup_factor
-      && sw_ratio2 - sw_ratio1 <= lookup_factor
-      && sw_ratio3 - sw_ratio1 <= lookup_factor) do
+      && sw_ratio2 - sw_ratio1 <= lookup_factor) do
 
       s_new = (s_current + s) / 2
       w_new = (w_current + s) / 2

@@ -3,7 +3,7 @@ defmodule GossipSimulator.Supervisor do
 
   @default_node_state %{counter: 0, neighbours: [], s: nil, w: 1,
         sw_ratio1: nil, sw_ratio2: nil, sw_ratio3: nil,
-        is_pushsum_terminated?: false, x: nil, y: nil}
+        is_pushsum_terminated?: false, x: nil, y: nil, z: nil}
 
   def start_link(opts) do
     Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
