@@ -47,7 +47,7 @@ defmodule GossipSimulator.CLI do
     # Taking approximation for number of nodes to form a perfect cube in 3D topologies
     num_nodes = if topology in ["3Dtorus"] do
 
-      num_nodes = :math.sqrt(num_nodes)
+      num_nodes = :math.pow(num_nodes,1/3)
       |> :math.ceil
       |> :math.pow(3)
       |> Kernel.trunc

@@ -81,9 +81,9 @@ defmodule GossipSimulator.Node do
       state = Map.put(state, :counter, counter + 1)
 
       # Send all the neighbours the message
-      Enum.each(state[:neighbours], fn pid ->
-        GenServer.cast(pid, {:send_message, message})
-      end)
+       Enum.each(state[:neighbours], fn pid ->
+         GenServer.cast(pid, {:send_message, message})
+       end)
 
       # Send the message to a random neighbour
       # The below code doesn't work as the message is not being distributed to

@@ -174,58 +174,299 @@ defmodule GossipSimulator.TopologyBuilder do
     end)
   end
 
-  defp torus_3d(_node_ids) do
-    # node_count = Enum.count(node_ids)
-    # row_length = :math.sqrt(node_count)
-    # y_increment = row_length
-    # z_increment = row_length * row_length
-    #
-    # node_ids
-    # |> Enum.with_index()
-    # |> Enum.map(fn {node_id, index} ->
-    #   neighbours = case index do
-    #     0 -> [Enum.at(node_ids, index + 1)]
-    #     _ -> [Enum.at(node_ids, index - 1),
-    #           Enum.at(node_ids, index + 1),
-    #           Enum.at(node_ids, index - y_increment),
-    #           Enum.at(node_ids, index + y_increment),
-    #           Enum.at(node_ids, index - z_increment),
-    #           Enum.at(node_ids, index + z_increment)]
-    #   end
-    #
-    #   # Remove nil from neighbours
-    #   # Enum.at(a, B) is nil for B >= length(a)
-    #    {node_id, Enum.filter(neighbours, &(&1))}
-    # end)
+  defp torus_3d(nodes_ids) do
+    node_count = Enum.count(nodes_ids)
+    y_increment = Kernel.trunc(:math.pow(node_count, 1/3))
+    z_increment = Kernel.trunc(:math.pow(y_increment, 2))
+    nodes_ids
+    |> Enum.with_index()
+    |> Enum.map(fn {node_id, index} ->
+      index = index + 1
+      neighbours = cond do
+        index == 1 ->
+            [
+              Enum.at(nodes_ids, index + 1 - 1),
+              Enum.at(nodes_ids,index + y_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - 1),
+              Enum.at(nodes_ids,node_count - z_increment + 1 - 1),
+              Enum.at(nodes_ids,index + y_increment - 1 - 1),
+              Enum.at(nodes_ids,index + z_increment - y_increment - 1)
+            ]
 
-    # llist = for x <- 1..row_length do
-    #   for y <- 1..row_length do
-    #     for z <- 1..row_length do
-    #       [x, y, z]
-    #     end
-    #   end
-    # end
+        index == y_increment ->
+            [
+              Enum.at(nodes_ids,index - 1),
+              Enum.at(nodes_ids,index + y_increment),
+              Enum.at(nodes_ids,index + z_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - y_increment - 1),
+              Enum.at(nodes_ids,index - y_increment + 1 - 1),
+              Enum.at(nodes_ids,node_count - z_increment + y_increment - 1)
+            ]
 
-    # llist = List.flatten(llist) |> Enum.chunk(3)
+        index == z_increment - y_increment + 1 ->
+            [
+              Enum.at(nodes_ids,index + 1 - 1),
+              Enum.at(nodes_ids,index - y_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - 1),
+              Enum.at(nodes_ids,node_count - y_increment + 1 - 1),
+              Enum.at(nodes_ids,index + y_increment - 1 - 1),
+              Enum.at(nodes_ids,1 - 1)
+            ]
 
-    # map_xyz = Enum.zip(llist, a) |> Enum.into(%{})
+        index == z_increment ->
+            [
+              Enum.at(nodes_ids,index - 1 - 1),
+              Enum.at(nodes_ids,index - y_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - 1),
+              Enum.at(nodes_ids,index - z_increment + y_increment - 1),
+              Enum.at(nodes_ids,node_count - 1),
+              Enum.at(nodes_ids,index - y_increment + 1 - 1)
+            ]
 
-    # nodes_with_xyz = node_ids
-    # |> Enum.with_index()
-    # |> Enum.map(fn {node_id, index} ->
-    #     {node_id, List.flatten(Enum.at(List.flatten(llist)
-    #       |> Enum.chunk_every(3),index))}
-    # end)
+        index == 1 + z_increment ->
+            [
+              Enum.at(nodes_ids,index + 1 - 1),
+              Enum.at(nodes_ids,index - z_increment - 1),
+              Enum.at(nodes_ids,index + y_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - y_increment - 1),
+              Enum.at(nodes_ids,index + y_increment - 1 - 1)
+            ]
 
-    # nodes_with_xyz
-    # |> Enum.map(fn {node, [x, y, z]} ->
-    #     neighbours = cond do
-    #       x != 1 && y != 1 && z != 1
-    #       -> [ ]
-    #     end
+        index == y_increment + z_increment ->
+            [
+              Enum.at(nodes_ids,index - 1 - 1),
+              Enum.at(nodes_ids,index - z_increment - 1),
+              Enum.at(nodes_ids,index + y_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - 1),
+              Enum.at(nodes_ids,index - y_increment + 1 - 1),
+              Enum.at(nodes_ids,index + z_increment - y_increment - 1)
+            ]
 
-    # end)
+        index == 2 * z_increment - y_increment + 1 ->
+            [
+              Enum.at(nodes_ids,index + 1 - 1),
+              Enum.at(nodes_ids,index - z_increment - 1),
+              Enum.at(nodes_ids,index - y_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - 1),
+              Enum.at(nodes_ids,index - z_increment + y_increment - 1),
+              Enum.at(nodes_ids,index + y_increment - 1 - 1)
+            ]
 
+        index == 2 * z_increment ->
+            [
+              Enum.at(nodes_ids,index - 1 - 1),
+              Enum.at(nodes_ids,index - z_increment - 1),
+              Enum.at(nodes_ids,index - y_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - 1),
+              Enum.at(nodes_ids,index - z_increment + y_increment - 1),
+              Enum.at(nodes_ids,index - y_increment + 1 - 1)
+            ]
+
+        index == 1 + 2 * z_increment ->
+            [
+              Enum.at(nodes_ids,index + 1 - 1),
+              Enum.at(nodes_ids,index + y_increment - 1),
+              Enum.at(nodes_ids,index - z_increment - 1),
+              Enum.at(nodes_ids,index + y_increment - 1 - 1),
+              Enum.at(nodes_ids,index + z_increment - y_increment - 1),
+              Enum.at(nodes_ids,1 - 1)
+            ]
+
+        index == y_increment + 2 * z_increment ->
+            [
+              Enum.at(nodes_ids,index - 1 - 1),
+              Enum.at(nodes_ids,index + y_increment - 1),
+              Enum.at(nodes_ids,index - z_increment - 1),
+              Enum.at(nodes_ids,index - y_increment + 1 - 1),
+              Enum.at(nodes_ids,index + z_increment - node_count - 1),
+              Enum.at(nodes_ids,index + z_increment - y_increment - 1)
+            ]
+
+        index == z_increment + 2 * z_increment - y_increment + 1 ->
+            [
+              Enum.at(nodes_ids,index + 1 - 1),
+              Enum.at(nodes_ids,index - y_increment - 1),
+              Enum.at(nodes_ids,index - z_increment - 1),
+              Enum.at(nodes_ids,index - z_increment + y_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - node_count - 1),
+              Enum.at(nodes_ids,index + y_increment - 1 - 1)
+            ]
+
+        index == node_count ->
+            [
+              Enum.at(nodes_ids,index - 1 - 1),
+              Enum.at(nodes_ids,index - y_increment - 1),
+              Enum.at(nodes_ids,index - z_increment - 1),
+              Enum.at(nodes_ids,index - y_increment + 1 - 1),
+              Enum.at(nodes_ids,index - z_increment + y_increment - 1),
+              Enum.at(nodes_ids,z_increment - 1)
+            ]
+
+        index < y_increment ->
+            [
+              Enum.at(nodes_ids,index - 1 - 1),
+              Enum.at(nodes_ids,index + 1 - 1),
+              Enum.at(nodes_ids,index + y_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - y_increment - 1),
+              Enum.at(nodes_ids,node_count - z_increment + y_increment - 1 - 1)
+            ]
+
+        index > z_increment - y_increment + 1
+         && index < z_increment ->
+            [
+              Enum.at(nodes_ids,index - 1 - 1),
+              Enum.at(nodes_ids,index + 1 - 1),
+              Enum.at(nodes_ids,index - y_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - 1),
+              Enum.at(nodes_ids,node_count - 1 - 1),
+              Enum.at(nodes_ids,index - z_increment + y_increment - 1)
+            ]
+
+        rem(index - 1, y_increment) == 0
+         && index < z_increment ->
+            [
+              Enum.at(nodes_ids,index + 1 - 1),
+              Enum.at(nodes_ids,index - y_increment - 1),
+              Enum.at(nodes_ids,index + y_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - 1),
+              Enum.at(nodes_ids,node_count - z_increment + y_increment + 1 - 1),
+              Enum.at(nodes_ids,index + y_increment - 1 - 1)
+            ]
+
+        rem(index, y_increment) == 0
+         && index < z_increment ->
+            [
+              Enum.at(nodes_ids,index - 1 - 1),
+              Enum.at(nodes_ids,index - y_increment - 1),
+              Enum.at(nodes_ids,index + y_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - 1),
+              Enum.at(nodes_ids,node_count - y_increment - 1),
+              Enum.at(nodes_ids,index - y_increment + 1 - 1)
+            ]
+
+        index < z_increment ->
+             [
+               Enum.at(nodes_ids,index - 1 - 1),
+               Enum.at(nodes_ids,index + 1 - 1),
+               Enum.at(nodes_ids,index - y_increment - 1),
+               Enum.at(nodes_ids,index + y_increment - 1),
+               Enum.at(nodes_ids,index + z_increment - 1),
+               Enum.at(nodes_ids,node_count - z_increment + index - 1)
+             ]
+
+        index < z_increment + y_increment
+         && index > 2 * y_increment ->
+             [
+               Enum.at(nodes_ids,index - 1 - 1),
+               Enum.at(nodes_ids,index + 1 - 1),
+               Enum.at(nodes_ids,index + z_increment - 1),
+               Enum.at(nodes_ids,index - z_increment - 1),
+               Enum.at(nodes_ids,index + y_increment - 1),
+               Enum.at(nodes_ids,index + z_increment - y_increment - 1)
+             ]
+
+        index > 2 * z_increment - y_increment + 1
+         && index < 2 * z_increment ->
+            [
+              Enum.at(nodes_ids,index - 1 - 1),
+              Enum.at(nodes_ids,index + 1 - 1),
+              Enum.at(nodes_ids,index - y_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - 1),
+              Enum.at(nodes_ids,index - z_increment - 1),
+              Enum.at(nodes_ids,index - z_increment + y_increment - 1)
+            ]
+
+        rem(index - 1, y_increment) == 0
+         && index < 2 * z_increment ->
+            [
+              Enum.at(nodes_ids,index + 1 - 1),
+              Enum.at(nodes_ids,index - y_increment - 1),
+              Enum.at(nodes_ids,index + y_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - 1),
+              Enum.at(nodes_ids,index - z_increment - 1),
+              Enum.at(nodes_ids,index + y_increment - 1 - 1)
+            ]
+
+        rem(index, y_increment) == 0
+         && index < 2 * z_increment ->
+            [
+              Enum.at(nodes_ids,index - 1 - 1),
+              Enum.at(nodes_ids,index - y_increment - 1),
+              Enum.at(nodes_ids,index + y_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - 1),
+              Enum.at(nodes_ids,index - z_increment - 1),
+              Enum.at(nodes_ids,index - y_increment + 1 - 1)
+            ]
+
+        index < 2 * z_increment + y_increment
+         && index > 2 * z_increment ->
+            [
+              Enum.at(nodes_ids,index - 1 - 1),
+              Enum.at(nodes_ids,index + 1 - 1),
+              Enum.at(nodes_ids,index + y_increment - 1),
+              Enum.at(nodes_ids,index - z_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - y_increment - 1),
+              Enum.at(nodes_ids,index + z_increment - node_count - 1)
+            ]
+
+        index > 3 * z_increment - y_increment + 1
+         && index < 3 * z_increment ->
+            [
+              Enum.at(nodes_ids,index - 1 - 1),
+              Enum.at(nodes_ids,index + 1 - 1),
+              Enum.at(nodes_ids,index - y_increment - 1),
+              Enum.at(nodes_ids,index - z_increment - 1),
+              Enum.at(nodes_ids,index - z_increment + y_increment - 1),
+              Enum.at(nodes_ids,z_increment - (node_count - index ) - 1)
+            ]
+
+        rem(index - 1, y_increment) == 0
+         && index < 3 * z_increment ->
+            [
+              Enum.at(nodes_ids,index + 1 - 1),
+              Enum.at(nodes_ids,index - y_increment - 1),
+              Enum.at(nodes_ids,index + y_increment - 1),
+              Enum.at(nodes_ids,index - z_increment - 1),
+              Enum.at(nodes_ids,node_count - index - 1 - 1),
+              Enum.at(nodes_ids,index + y_increment - 1 - 1)
+            ]
+
+        rem(index, y_increment) == 0
+         && index < 3 * z_increment ->
+            [
+              Enum.at(nodes_ids,index - 1 - 1),
+              Enum.at(nodes_ids,index - y_increment - 1),
+              Enum.at(nodes_ids,index + y_increment - 1),
+              Enum.at(nodes_ids,index - z_increment - 1),
+              Enum.at(nodes_ids,(node_count - index) + y_increment - 1),
+              Enum.at(nodes_ids,index - y_increment + 1 - 1)
+            ]
+
+        index < 3 * z_increment
+         && index > 2 * z_increment ->
+            [
+              Enum.at(nodes_ids,index - 1 - 1),
+              Enum.at(nodes_ids,index + 1 - 1),
+              Enum.at(nodes_ids,index - y_increment - 1),
+              Enum.at(nodes_ids,index + y_increment - 1),
+              Enum.at(nodes_ids,index - z_increment - 1),
+              Enum.at(nodes_ids,node_count - index + 1 - 1)
+            ]
+
+        true ->
+          [
+            Enum.at(nodes_ids,index - 1 - 1),
+            Enum.at(nodes_ids,index + 1 - 1),
+            Enum.at(nodes_ids,index - y_increment - 1),
+            Enum.at(nodes_ids,index + y_increment - 1),
+            Enum.at(nodes_ids,index + z_increment - 1),
+            Enum.at(nodes_ids,index - z_increment - 1)
+          ]
+        end
+        {node_id, Enum.filter(neighbours, &(&1))}
+   end)
   end
 
   defp build_randhoneycomb(node_ids) do
