@@ -134,62 +134,54 @@ defmodule GossipSimulator.Node do
 
     termination_difference = 1.0e-10
 
-    if length(past_sw_ratios) >= 3 do
+    state = if length(past_sw_ratios) >= 3 do
 
       past_sw_ratio_1 = Enum.at(past_sw_ratios, 0)
       past_sw_ratio_2 = Enum.at(past_sw_ratios, 1)
       past_sw_ratio_3 = Enum.at(past_sw_ratios, 2)
       
-      if abs(past_sw_ratio_1 - past_sw_ratio_2) > termination_difference &&
-        abs(past_sw_ratio_2 - past_sw_ratio_3) > termination_difference do
+      if abs(past_sw_ratio_1 - past_sw_ratio_2) < termination_difference &&
+        abs(past_sw_ratio_2 - past_sw_ratio_3) < termination_difference do
+        Logger.debug "Gossip.Node #{inspect self()}
+        Push-sum terminated | Last s/w ratios = #{inspect past_sw_ratios}"
         
+        # Return updated state
+        Map.put(state, :is_pushsum_terminated?, true)
+      else
         Logger.debug "Gossip.Node #{inspect self()}
         Push-sum condition not reached
         Termination difference not achieved"
 
-        s_new = (s_current + s) / 2
-        w_new = (w_current + w) / 2
-
-        state = Map.put(state, :s, s_new)
-        state = Map.put(state, :w, w_new)
-
-        new_sw_ratio = s_current / w_current
-        new_sw_ratios = Enum.slice([new_sw_ratio] ++ past_sw_ratios, 0..2)
-        state = Map.put(state, :past_sw_ratios, new_sw_ratios)
-
-        Logger.debug "New S/W ratios are #{inspect new_sw_ratios}"
-
-        # Send the message to a random neighbour
-        random_neighbour = Enum.random(state[:neighbours])
-        GenServer.cast(random_neighbour, {:push_sum, s_new, w_new})
-
-        {:noreply, state}
-      else
-        Logger.debug "Gossip.Node #{inspect self()}
-        Push-sum terminated | Last s/w ratios = #{inspect past_sw_ratios}"
-        
-        state = Map.put(state, :is_pushsum_terminated?, true)
-        {:noreply, state}
+        # Return state unchanged
+        state
       end
     else
       Logger.debug "Gossip.Node #{inspect self()}
       Push-sum condition not reached
       Not enough past S/W ratios: #{inspect past_sw_ratios}"
-      
-      s_new = (s_current + s) / 2
-      w_new = (w_current + w) / 2
 
-      state = Map.put(state, :s, s_new)
-      state = Map.put(state, :w, w_new)
-
-      new_sw_ratio = s_current / w_current
-      new_sw_ratios = [new_sw_ratio] ++ past_sw_ratios
-      state = Map.put(state, :past_sw_ratios, new_sw_ratios)
-
-      random_neighbour = Enum.random(state[:neighbours])
-      GenServer.cast(random_neighbour, {:push_sum, s_new, w_new})
-
-      {:noreply, state}
+      # Return state unchanged
+      state
     end
+
+    # Update s and w values
+    s_new = (s_current + s) / 2
+    w_new = (w_current + w) / 2
+
+    # Update the state
+    state = Map.put(state, :s, s_new)
+    state = Map.put(state, :w, w_new)
+
+    new_sw_ratio = s_current / w_current
+    new_sw_ratios = Enum.slice([new_sw_ratio] ++ past_sw_ratios, 0..2)
+    state = Map.put(state, :past_sw_ratios, new_sw_ratios)
+
+    Logger.debug "New S/W ratios are #{inspect new_sw_ratios}"
+
+    # Send the message to a random neighbour
+    random_neighbour = Enum.random(state[:neighbours])
+    GenServer.cast(random_neighbour, {:push_sum, s_new, w_new})
+
+    {:noreply, state}
   end
 end
