@@ -36,14 +36,16 @@ defmodule GossipSimulator.TopologyBuilder do
   end
 
   defp calc_distance(a, b) do
-     c = a - b
-     if c<0 do
-       c = c * (-1)
-     end
-     c
+    c = a - b
+     
+    if c < 0 do
+      c * (-1)
+    else
+      c
+    end
   end
 
-  defp build_random2d(mode_ids) do
+  defp build_random2d(node_ids) do
     cordinates = node_ids
       |> Enum.map(fn {node_id} ->
         {node_id, :rand.uniform(), :rand.uniform()}
@@ -108,9 +110,9 @@ defmodule GossipSimulator.TopologyBuilder do
     end)
   end
 
-  defp torus_3d(node_ids) do
-    node_count = Enum.count(node_ids)
-    row_length = :math.sqrt(node_count)
+  defp torus_3d(_node_ids) do
+    # node_count = Enum.count(node_ids)
+    # row_length = :math.sqrt(node_count)
     # y_increment = row_length
     # z_increment = row_length * row_length
     #
@@ -131,38 +133,39 @@ defmodule GossipSimulator.TopologyBuilder do
     #   # Enum.at(a, B) is nil for B >= length(a)
     #    {node_id, Enum.filter(neighbours, &(&1))}
     # end)
-    llist = for x <- 1..row_length do
-      for y <- 1..row_length do
-        for z <- 1..row_length do
-          [x, y, z]
-        end
-      end
-    end
+    
+    # llist = for x <- 1..row_length do
+    #   for y <- 1..row_length do
+    #     for z <- 1..row_length do
+    #       [x, y, z]
+    #     end
+    #   end
+    # end
 
-    llist = List.flatten(llist) |> Enum.chunk(3)
+    # llist = List.flatten(llist) |> Enum.chunk(3)
 
-    map_xyz = Enum.zip(llist,a) |> Enum.into(%{})
+    # map_xyz = Enum.zip(llist, a) |> Enum.into(%{})
 
-    nodes_with_xyz = node_ids
-    |> Enum.with_index()
-    |> Enum.map(fn {node_id, index} ->
-        {node_id, List.flatten(Enum.at(List.flatten(llist)
-          |> Enum.chunk_every(3),index))}
-    end)
+    # nodes_with_xyz = node_ids
+    # |> Enum.with_index()
+    # |> Enum.map(fn {node_id, index} ->
+    #     {node_id, List.flatten(Enum.at(List.flatten(llist)
+    #       |> Enum.chunk_every(3),index))}
+    # end)
 
-    nodes_with_xyz
-    |> Enum.map(fn {node, [x, y, z]} ->
-        neighbours = cond do
-          x != 1 && y != 1 && z != 1
-          -> [ ]
-        end
+    # nodes_with_xyz
+    # |> Enum.map(fn {node, [x, y, z]} ->
+    #     neighbours = cond do
+    #       x != 1 && y != 1 && z != 1
+    #       -> [ ]
+    #     end
 
-    end)
-
-  end
-
-  defp randhoneycomb(node_ids) do
+    # end)
 
   end
+
+  # defp randhoneycomb(node_ids) do
+  #   nil
+  # end
 
 end

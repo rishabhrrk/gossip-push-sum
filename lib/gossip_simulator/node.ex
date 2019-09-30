@@ -61,6 +61,13 @@ defmodule GossipSimulator.Node do
   end
 
   @impl true
+  def handle_call({:initialize_s, s}, _from, state) do
+    # Update the state HashMap
+    state = Map.put(state, :s, s)
+    {:reply, :ok, state}
+  end
+
+  @impl true
   def handle_cast({:send_message, message}, state) do
     counter = state[:counter]
     # IO.puts "#{inspect self()}: received message, counter = #{counter}"
@@ -86,12 +93,6 @@ defmodule GossipSimulator.Node do
     end
   end
 
-  @impl true
-  def handle_call({:initialize_s, s}, _from, state) do
-    # Update the state HashMap
-    state = Map.put(state, :s, s)
-    {:reply, :ok, state}
-  end
 
   @impl true
   def handle_cast({:push_sum, s, w}, state) do
