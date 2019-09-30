@@ -1,4 +1,7 @@
+require Logger
+
 defmodule GossipSimulator.TopologyBuilder do
+  
   def build(node_ids, topology) do
     case topology do
       "full" -> build_full(node_ids)
