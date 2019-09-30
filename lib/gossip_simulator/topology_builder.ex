@@ -51,7 +51,7 @@ defmodule GossipSimulator.TopologyBuilder do
 
     for {nodei,xi, yi} <- cordinates do
       neighbours = for {nodej,xj, yj} <- cordinates, nodei != nodej,
-          calc_distance(xi, xj) < 0.1, calc_distance < 0.1 do
+          calc_distance(xi, xj) < 0.1, calc_distance(yi,yj) < 0.1 do
                           {nodej}
                     end
       {nodei, neighbours}
@@ -60,7 +60,7 @@ defmodule GossipSimulator.TopologyBuilder do
 
   defp build_honeycomb(node_ids) do
     node_count = Enum.count(node_ids)
-    row_length = :math.sqrt(node_count)
+    row_length = round(:math.sqrt(node_count))
     node_ids
     |> Enum.with_index()
     |> Enum.map(fn {node_id, index} ->
@@ -100,7 +100,7 @@ defmodule GossipSimulator.TopologyBuilder do
         # 6 odd row, odd index, last member
         rem(div(index, row_length) + 1,2) != 0
         && rem(rem(index,row_length),2) != 0
-        && (row_length - rem(index,row_length)) != 1
+        && (row_length - rem(index,row_length)) == 1
         -> [ Enum.at(node_ids, index + row_length),
              Enum.at(node_ids, index - row_length)]
       end
@@ -131,17 +131,38 @@ defmodule GossipSimulator.TopologyBuilder do
     #   # Enum.at(a, B) is nil for B >= length(a)
     #    {node_id, Enum.filter(neighbours, &(&1))}
     # end)
-    for x <- 1..row_length do
+    llist = for x <- 1..row_length do
       for y <- 1..row_length do
         for z <- 1..row_length do
-
+          [x, y, z]
         end
       end
     end
+
+    llist = List.flatten(llist) |> Enum.chunk(3)
+
+    map_xyz = Enum.zip(llist,a) |> Enum.into(%{})
+
+    nodes_with_xyz = node_ids
+    |> Enum.with_index()
+    |> Enum.map(fn {node_id, index} ->
+        {node_id, List.flatten(Enum.at(List.flatten(llist)
+          |> Enum.chunk_every(3),index))}
+    end)
+
+    nodes_with_xyz
+    |> Enum.map(fn {node, [x, y, z]} ->
+        neighbours = cond do
+          x != 1 && y != 1 && z != 1
+          -> [ ]
+        end
+
+    end)
+
   end
 
   defp randhoneycomb(node_ids) do
-    
+
   end
 
 end
