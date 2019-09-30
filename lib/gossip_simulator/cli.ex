@@ -112,10 +112,10 @@ defmodule GossipSimulator.CLI do
     converged_counters = Enum.filter(counters, fn c -> c >= 1 end)
 
     unless length(converged_counters) / length(counters) > 0.9 do
-      
+
       Logger.debug "Converged counters: #{length(converged_counters)}"
       Logger.debug "All counters: #{length(counters)}"
-      
+
       wait_until_gossip_converged(node_pids)
     end
   end

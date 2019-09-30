@@ -1,7 +1,7 @@
 require Logger
 
 defmodule GossipSimulator.TopologyBuilder do
-  
+
   def build(node_ids, topology) do
     case topology do
       "full" -> build_full(node_ids)
@@ -9,7 +9,7 @@ defmodule GossipSimulator.TopologyBuilder do
       "rand2D" -> build_random2d(node_ids)
       "honeycomb" -> build_honeycomb(node_ids)
       "3Dtorus" -> torus_3d(node_ids)
-      "randhoneycomb" -> build_random2d(node_ids)
+      "randhoneycomb" -> build_randhoneycomb(node_ids)
       other_topology -> IO.puts "Oops! Sorry, #{other_topology}
          is under construction"
     end
@@ -66,8 +66,32 @@ defmodule GossipSimulator.TopologyBuilder do
     |> Enum.with_index()
     |> Enum.map(fn {node_id, index} ->
       neighbours = cond do
+        # 1 first row, odd index
+        index <= (row_length - 1)
+        && rem(rem(index,row_length), 2) != 0
+        -> [
+          Enum.at(node_ids, index - 1),
+          Enum.at(node_ids, index + row_length)
+        ]
 
-        # 1 odd row, odd index
+        # 2 first row, even index, not last element
+        index <= (row_length - 1)
+        && rem(rem(index,row_length), 2) == 0
+        && (row_length - rem(index,row_length)) != 1
+        -> [
+          Enum.at(node_ids, index + 1),
+          Enum.at(node_ids, index + row_length)
+        ]
+
+        # 3 first row, even index, last element
+        index <= (row_length - 1)
+        && rem(rem(index,row_length), 2) == 0
+        && (row_length - rem(index,row_length)) == 1
+        -> [
+          Enum.at(node_ids, index + row_length)
+        ]
+
+        # 4 odd row, odd index
         rem(div(index, row_length) + 1, 2) != 0
         && rem(rem(index,row_length), 2) != 0
         -> [
@@ -76,7 +100,7 @@ defmodule GossipSimulator.TopologyBuilder do
           Enum.at(node_ids, index - row_length)
         ]
 
-        # 2 odd row, even index, not last index
+        # 5 odd row, even index, not last index
         rem(div(index, row_length) + 1, 2) != 0
         && rem(rem(index,row_length), 2) == 0
         && (row_length - rem(index,row_length)) != 1
@@ -86,7 +110,7 @@ defmodule GossipSimulator.TopologyBuilder do
           Enum.at(node_ids, index - row_length)
         ]
 
-        # 3 even row , odd index, not first index
+        # 6 even row , odd index, not first index
         rem(div(index, row_length) + 1, 2) == 0
         && rem(rem(index,row_length), 2) != 0
         && rem(index,row_length) != 0
@@ -96,7 +120,7 @@ defmodule GossipSimulator.TopologyBuilder do
           Enum.at(node_ids, index - row_length)
         ]
 
-        # 4 even row, even index, not first index
+        # 7 even row, even index, not first index
         rem(div(index, row_length) + 1, 2) == 0
         && rem(rem(index,row_length), 2) == 0
         && rem(index,row_length) != 0
@@ -106,7 +130,7 @@ defmodule GossipSimulator.TopologyBuilder do
           Enum.at(node_ids, index - row_length)
         ]
 
-        # 5 even row, even index, first index
+        # 8 even row, even index, first index
         rem(div(index, row_length) + 1, 2) == 0
         && rem(rem(index,row_length), 2) == 0
         && rem(index,row_length) == 0
@@ -115,7 +139,7 @@ defmodule GossipSimulator.TopologyBuilder do
           Enum.at(node_ids, index - row_length)
         ]
 
-        # 6 even row, odd index, first index
+        # 9 even row, odd index, first index
         rem(div(index, row_length) + 1, 2) == 0
         && rem(rem(index,row_length), 2) != 0
         && rem(index,row_length) == 0
@@ -124,7 +148,7 @@ defmodule GossipSimulator.TopologyBuilder do
           Enum.at(node_ids, index - row_length)
         ]
 
-        # 7 odd row, odd index, last member
+        # 10 odd row, odd index, last member
         rem(div(index, row_length) + 1, 2) != 0
         && rem(rem(index,row_length), 2) != 0
         && (row_length - rem(index,row_length)) == 1
@@ -133,7 +157,7 @@ defmodule GossipSimulator.TopologyBuilder do
           Enum.at(node_ids, index - row_length)
         ]
 
-        # 8 odd row, even index, last member
+        # 11 odd row, even index, last member
         rem(div(index, row_length) + 1, 2) != 0
         && rem(rem(index,row_length), 2) == 0
         && (row_length - rem(index,row_length)) == 1
@@ -173,7 +197,7 @@ defmodule GossipSimulator.TopologyBuilder do
     #   # Enum.at(a, B) is nil for B >= length(a)
     #    {node_id, Enum.filter(neighbours, &(&1))}
     # end)
-    
+
     # llist = for x <- 1..row_length do
     #   for y <- 1..row_length do
     #     for z <- 1..row_length do
@@ -204,8 +228,14 @@ defmodule GossipSimulator.TopologyBuilder do
 
   end
 
-  # defp randhoneycomb(node_ids) do
-  #   nil
-  # end
+  defp build_randhoneycomb(node_ids) do
+    build_honeycomb(node_ids)
+    |> Enum.map(fn {node, neighbours} ->
+      possible_random_neighbours = node_ids
+        |> Enum.reject(&(&1 in neighbours))
+        |> Enum.reject(&(&1 == node))
 
+      {node, [Enum.random(possible_random_neighbours)] ++ neighbours}
+    end)
+  end
 end

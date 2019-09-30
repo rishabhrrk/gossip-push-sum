@@ -72,7 +72,7 @@ defmodule GossipSimulator.Node do
   @impl true
   def handle_cast({:send_message, message}, state) do
     counter = state[:counter]
-    
+
     Logger.debug "#{inspect self()}: received message, counter = #{counter}"
 
     if counter < 10 do
@@ -86,7 +86,8 @@ defmodule GossipSimulator.Node do
       end)
 
       # Send the message to a random neighbour
-      # The below code doesn't work as the message is not being distributed to neighbours and everytime a neighbour reaches counter 10, it does not send the message any further.
+      # The below code doesn't work as the message is not being distributed to
+      # neighbours and everytime a neighbour reaches counter 10, it does not send the message any further.
       # random_neighbour = Enum.random(state[:neighbours])
       # GenServer.cast(random_neighbour, {:send_message, message})
 
@@ -139,12 +140,12 @@ defmodule GossipSimulator.Node do
       past_sw_ratio_1 = Enum.at(past_sw_ratios, 0)
       past_sw_ratio_2 = Enum.at(past_sw_ratios, 1)
       past_sw_ratio_3 = Enum.at(past_sw_ratios, 2)
-      
+
       if abs(past_sw_ratio_1 - past_sw_ratio_2) < termination_difference &&
         abs(past_sw_ratio_2 - past_sw_ratio_3) < termination_difference do
         Logger.debug "Gossip.Node #{inspect self()}
         Push-sum terminated | Last s/w ratios = #{inspect past_sw_ratios}"
-        
+
         # Return updated state
         Map.put(state, :is_pushsum_terminated?, true)
       else
