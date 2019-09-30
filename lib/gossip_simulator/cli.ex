@@ -124,7 +124,7 @@ defmodule GossipSimulator.CLI do
     states = Enum.map node_pids, fn pid -> GenServer.call(pid, :get_state) end
     is_terminated? = Enum.map states, fn s -> s[:is_pushsum_terminated?] end
 
-    unless Enum.any?(is_terminated?, fn i -> i end) do
+    unless Enum.all?(is_terminated?, fn i -> i end) do
       wait_until_pushsum_converged(node_pids)
     else
       IO.puts "Push-sum completed. Converged node details:"

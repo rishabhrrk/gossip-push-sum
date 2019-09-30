@@ -169,6 +169,23 @@ defmodule GossipSimulator.Node do
         Push-sum terminated | Last s/w ratios = #{inspect past_sw_ratios}"
         
         state = Map.put(state, :is_pushsum_terminated?, true)
+
+        s_new = (s_current + s) / 2
+        w_new = (w_current + w) / 2
+
+        state = Map.put(state, :s, s_new)
+        state = Map.put(state, :w, w_new)
+
+        new_sw_ratio = s_current / w_current
+        new_sw_ratios = Enum.slice([new_sw_ratio] ++ past_sw_ratios, 0..2)
+        state = Map.put(state, :past_sw_ratios, new_sw_ratios)
+
+        Logger.debug "New S/W ratios are #{inspect new_sw_ratios}"
+
+        # Send the message to a random neighbour
+        random_neighbour = Enum.random(state[:neighbours])
+        GenServer.cast(random_neighbour, {:push_sum, s_new, w_new})
+
         {:noreply, state}
       end
     else
