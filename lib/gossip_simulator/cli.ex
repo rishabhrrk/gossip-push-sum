@@ -85,7 +85,7 @@ defmodule GossipSimulator.CLI do
         start_time = System.system_time(:millisecond)
         GossipSimulator.Algorithms.Gossip.run(starter_node_pid)
 
-        wait_until_gossip_converged(node_pids)
+        wait_until_gossip_converged(node_pids, [])
         end_time = System.system_time(:millisecond)
         IO.puts "Stopping condition reached. Total time: #{end_time - start_time}ms"
 
@@ -103,20 +103,24 @@ defmodule GossipSimulator.CLI do
     end
   end
 
-  def wait_until_gossip_converged(node_pids) do
+  def wait_until_gossip_converged(node_pids, previous_convergence_ratios) do
     counters = Enum.map(node_pids, fn pid ->
       state = GenServer.call(pid, :get_state)
       state[:counter]
     end)
 
     converged_counters = Enum.filter(counters, fn c -> c >= 1 end)
+    convergence_ratio = length(converged_counters) / length(counters)
 
-    unless length(converged_counters) / length(counters) > 0.9 do
+    Logger.info "Convergence Ratio: #{convergence_ratio * 100}%"
+
+    unless convergence_ratio > 0.9 do
 
       Logger.debug "Converged counters: #{length(converged_counters)}"
       Logger.debug "All counters: #{length(counters)}"
 
-      wait_until_gossip_converged(node_pids)
+      wait_until_gossip_converged(node_pids,
+        [convergence_ratio] ++ previous_convergence_ratios)
     end
   end
 
@@ -124,7 +128,10 @@ defmodule GossipSimulator.CLI do
     states = Enum.map node_pids, fn pid -> GenServer.call(pid, :get_state) end
     is_terminated? = Enum.map states, fn s -> s[:is_pushsum_terminated?] end
 
-    unless Enum.all?(is_terminated?, fn i -> i end) do
+    converged_nodes = Enum.filter(is_terminated?, fn i -> i end)
+    convergence_ratio = length(converged_nodes) / length(node_pids)
+
+    unless convergence_ratio > 0.9 do
       wait_until_pushsum_converged(node_pids)
     else
       Logger.debug "Push-sum completed. Converged node details:"
