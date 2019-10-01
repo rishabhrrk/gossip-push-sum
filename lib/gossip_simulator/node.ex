@@ -180,7 +180,7 @@ defmodule GossipSimulator.Node do
     GenServer.cast(random_neighbour, {:send_message, message})
 
     Process.send_after(self(),
-      {:forward_to_random_neighbour, neighbours, message}, 200)
+      {:forward_to_random_neighbour, neighbours, message}, 20)
 
     {:noreply, state}
   end
