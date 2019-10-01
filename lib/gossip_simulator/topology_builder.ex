@@ -110,10 +110,11 @@ defmodule GossipSimulator.TopologyBuilder do
           Enum.at(node_ids, index - row_length)
         ]
 
-        # 6 even row , odd index, not first index
+        # 6 even row , odd index, not first index, not last index
         rem(div(index, row_length) + 1, 2) == 0
         && rem(rem(index,row_length), 2) != 0
         && rem(index,row_length) != 0
+        && (row_length - rem(index,row_length)) != 1
         -> [
           Enum.at(node_ids, index + 1),
           Enum.at(node_ids, index + row_length),
@@ -139,10 +140,11 @@ defmodule GossipSimulator.TopologyBuilder do
           Enum.at(node_ids, index - row_length)
         ]
 
-        # 9 even row, odd index, first index
+        # 9 even row, odd index, first index, last index
         rem(div(index, row_length) + 1, 2) == 0
         && rem(rem(index,row_length), 2) != 0
         && rem(index,row_length) == 0
+        && (row_length - rem(index,row_length)) == 1
         -> [
           Enum.at(node_ids, index + row_length),
           Enum.at(node_ids, index - row_length)
@@ -160,7 +162,7 @@ defmodule GossipSimulator.TopologyBuilder do
         # 11 odd row, even index, last member
         rem(div(index, row_length) + 1, 2) != 0
         && rem(rem(index,row_length), 2) == 0
-        && (row_length - rem(index,row_length)) == 1
+        || (row_length - rem(index,row_length)) == 1
         -> [
           Enum.at(node_ids, index + row_length),
           Enum.at(node_ids, index - row_length)
@@ -169,7 +171,6 @@ defmodule GossipSimulator.TopologyBuilder do
         true -> Logger.error "Generating Honeycomb Topology
         No match for index: #{index} and row length: #{row_length}"
       end
-
       {node_id, Enum.filter(neighbours, &(&1))}
     end)
   end
