@@ -127,10 +127,10 @@ defmodule GossipSimulator.CLI do
     unless Enum.all?(is_terminated?, fn i -> i end) do
       wait_until_pushsum_converged(node_pids)
     else
-      IO.puts "Push-sum completed. Converged node details:"
+      Logger.debug "Push-sum completed. Converged node details:"
       states
       |> Enum.filter(fn i -> i[:is_pushsum_terminated?] end)
-      |> Enum.map(fn i -> IO.inspect(i) end)
+      |> Enum.map(fn i -> Logger.debug("#{inspect i}") end)
     end
   end
 
