@@ -5,9 +5,18 @@ defmodule GossipSimulator.CLI do
   @topologies ["full", "line", "rand2D", "3Dtorus", "honeycomb", "randhoneycomb"]
   @algorithms ["gossip", "push-sum"]
 
+  @doc """
+  Starter function called when run through mix run
+  """
   def main do
     args = System.argv()
+    main(args)
+  end
 
+  @doc """
+  Starter function called when run through escript
+  """
+  def main(args) do
     if length(args) != 3 do
       print_help_msg()
       exit :shutdown
@@ -30,7 +39,8 @@ defmodule GossipSimulator.CLI do
       exit :shutdown
     end
 
-    # Taking approximation for number of nodes to form a perfect square in 2D topologies
+    # Taking approximation for number of nodes to form a perfect square in 2D
+    # topologies
     num_nodes = if topology in ["honeycomb", "randhoneycomb"] do
       num_nodes = :math.sqrt(num_nodes)
       |> :math.ceil
@@ -44,7 +54,8 @@ defmodule GossipSimulator.CLI do
       num_nodes
     end
 
-    # Taking approximation for number of nodes to form a perfect cube in 3D topologies
+    # Taking approximation for number of nodes to form a perfect cube in 3D
+    # topologies
     num_nodes = if topology in ["3Dtorus"] do
 
       num_nodes = :math.pow(num_nodes,1/3)
