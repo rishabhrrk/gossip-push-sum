@@ -73,23 +73,14 @@ defmodule GossipSimulator.Node do
   def handle_cast({:send_message, message}, state) do
     counter = state[:counter]
 
-    Logger.debug "#{inspect self()}: received message, counter = #{counter}"
+    Logger.debug("#{inspect(self())}: received message, counter = #{counter}")
 
     if counter < 10 do
-
       # Update the counter
       state = Map.put(state, :counter, counter + 1)
 
-      # Send all the neighbours the message
-       Enum.each(state[:neighbours], fn pid ->
-         GenServer.cast(pid, {:send_message, message})
-       end)
-
       # Send the message to a random neighbour
-      # The below code doesn't work as the message is not being distributed to
-      # neighbours and everytime a neighbour reaches counter 10, it does not send the message any further.
-      # random_neighbour = Enum.random(state[:neighbours])
-      # GenServer.cast(random_neighbour, {:send_message, message})
+      send(self(), {:forward_to_random_neighbour, state[:neighbours], message})
 
       {:noreply, state}
     else
@@ -99,11 +90,10 @@ defmodule GossipSimulator.Node do
 
   @impl true
   def handle_cast(:start_push_sum, state) do
-
     s = state[:s]
     w = state[:w]
 
-    Logger.debug "Gossip.Node #{inspect self()} | Starting push-sum | s = #{s}, w = #{w}"
+    Logger.debug("Gossip.Node #{inspect(self())} | Starting push-sum | s = #{s}, w = #{w}")
 
     s_new = s / 2
     w_new = w / 2
@@ -116,7 +106,6 @@ defmodule GossipSimulator.Node do
     state = Map.put(state, :sw_ratios, [sw_ratio] ++ sw_ratios)
 
     random_neighbour = Enum.random(state[:neighbours])
-
     GenServer.cast(random_neighbour, {:push_sum, s_new, w_new})
 
     {:noreply, state}
@@ -124,46 +113,45 @@ defmodule GossipSimulator.Node do
 
   @impl true
   def handle_cast({:push_sum, s, w}, state) do
-
     s_current = state[:s]
     w_current = state[:w]
     past_sw_ratios = state[:past_sw_ratios]
 
-    Logger.debug "Gossip.Node #{inspect self()}
+    Logger.debug("Gossip.Node #{inspect(self())}
     Received s = #{s}, w = #{w}
-    My state s = #{s_current}, w = #{w_current}, sw_ratios = #{inspect past_sw_ratios}"
+    My state s = #{s_current}, w = #{w_current}, sw_ratios = #{inspect(past_sw_ratios)}")
 
     termination_difference = 1.0e-10
 
-    state = if length(past_sw_ratios) >= 3 do
+    state =
+      if length(past_sw_ratios) >= 3 do
+        past_sw_ratio_1 = Enum.at(past_sw_ratios, 0)
+        past_sw_ratio_2 = Enum.at(past_sw_ratios, 1)
+        past_sw_ratio_3 = Enum.at(past_sw_ratios, 2)
 
-      past_sw_ratio_1 = Enum.at(past_sw_ratios, 0)
-      past_sw_ratio_2 = Enum.at(past_sw_ratios, 1)
-      past_sw_ratio_3 = Enum.at(past_sw_ratios, 2)
+        if abs(past_sw_ratio_1 - past_sw_ratio_2) < termination_difference &&
+             abs(past_sw_ratio_2 - past_sw_ratio_3) < termination_difference do
+          Logger.debug("Gossip.Node #{inspect(self())}
+        Push-sum terminated | Last s/w ratios = #{inspect(past_sw_ratios)}")
 
-      if abs(past_sw_ratio_1 - past_sw_ratio_2) < termination_difference &&
-        abs(past_sw_ratio_2 - past_sw_ratio_3) < termination_difference do
-        Logger.debug "Gossip.Node #{inspect self()}
-        Push-sum terminated | Last s/w ratios = #{inspect past_sw_ratios}"
-
-        # Return updated state
-        Map.put(state, :is_pushsum_terminated?, true)
-      else
-        Logger.debug "Gossip.Node #{inspect self()}
+          # Return updated state
+          Map.put(state, :is_pushsum_terminated?, true)
+        else
+          Logger.debug("Gossip.Node #{inspect(self())}
         Push-sum condition not reached
-        Termination difference not achieved"
+        Termination difference not achieved")
+
+          # Return state unchanged
+          state
+        end
+      else
+        Logger.debug("Gossip.Node #{inspect(self())}
+      Push-sum condition not reached
+      Not enough past S/W ratios: #{inspect(past_sw_ratios)}")
 
         # Return state unchanged
         state
       end
-    else
-      Logger.debug "Gossip.Node #{inspect self()}
-      Push-sum condition not reached
-      Not enough past S/W ratios: #{inspect past_sw_ratios}"
-
-      # Return state unchanged
-      state
-    end
 
     # Update s and w values
     s_new = (s_current + s) / 2
@@ -177,11 +165,22 @@ defmodule GossipSimulator.Node do
     new_sw_ratios = Enum.slice([new_sw_ratio] ++ past_sw_ratios, 0..2)
     state = Map.put(state, :past_sw_ratios, new_sw_ratios)
 
-    Logger.debug "New S/W ratios are #{inspect new_sw_ratios}"
+    Logger.debug("New S/W ratios are #{inspect(new_sw_ratios)}")
 
     # Send the message to a random neighbour
     random_neighbour = Enum.random(state[:neighbours])
     GenServer.cast(random_neighbour, {:push_sum, s_new, w_new})
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:forward_to_random_neighbour, neighbours, message}, state) do
+    random_neighbour = Enum.random(neighbours)
+    GenServer.cast(random_neighbour, {:send_message, message})
+
+    Process.send_after(self(),
+      {:forward_to_random_neighbour, neighbours, message}, 200)
 
     {:noreply, state}
   end
