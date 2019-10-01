@@ -31,7 +31,7 @@ defmodule GossipSimulator.CLI do
     end
 
     # Taking approximation for number of nodes to form a perfect square in 2D topologies
-    num_nodes = if topology in ["rand2D", "honeycomb", "randhoneycomb"] do
+    num_nodes = if topology in ["honeycomb", "randhoneycomb"] do
       num_nodes = :math.sqrt(num_nodes)
       |> :math.ceil
       |> :math.pow(2)
