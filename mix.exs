@@ -8,7 +8,7 @@ defmodule GossipSimulator.MixProject do
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      escript: [main_module: GossipSimulator.CLI]
+      escript: [main_module: GossipSimulator.CLI, name: "my_program"]
     ]
   end
 
