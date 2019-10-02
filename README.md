@@ -70,7 +70,7 @@ successfully converged.
 - Honeycomb - 5041 nodes
 - Random Honeycomb - 5041 nodes
 
-## Push-sum
+### Push-sum
 
 If a convergence rate of 90% is reached, i.e. more than 90% of the nodes have
 three consecutive S/W ratios to have not changed by 1e-10, we conclude that the
