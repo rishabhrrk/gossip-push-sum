@@ -45,16 +45,6 @@ Available algorithms:
 - push-sum
 ```
 
-## Team Members
-
-* Prajwal Dondiganahalli Prakash (UFID 04464906)
-* Rishabh Khanna (UFID 13399251)
-
-## What is working
-
-All the topologies are implemented and both the algorithms are working for these
-topologies.
-
 ## The largest network the algorithm works for:
 
 ### Gossip
